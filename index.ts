@@ -1,16 +1,17 @@
 'use strict'
 const vertexShaderSource: string = `#version 300 es
- 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec4 a_position;
- 
-// all shaders have a main function
+
+in vec2 a_position;
+uniform vec2 u_resolution;
+out vec4 outp;
 void main() {
  
-  // gl_Position is a special variable a vertex shader
-  // is responsible for setting
-  gl_Position = a_position;
+
+  vec2 zeroToOne = a_position / u_resolution;
+  vec2 zeroToTwo = zeroToOne * 2.0;
+  vec2 clipSpace = zeroToTwo - 1.0;
+
+  gl_Position = vec4(clipSpace, 0, 1);
 }
 `
 
@@ -29,7 +30,22 @@ void main() {
 }
 `;
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, multiplier = 1) {
+    
+    const width  = canvas.clientWidth  * multiplier || 0;
+    const height = canvas.clientHeight * multiplier || 0;
+
+    console.log({ width, cw: canvas.clientWidth, height, ch: canvas.clientHeight })
+    
+    if (canvas.width !== width ||  canvas.height !== height) {
+      canvas.width  = width;
+      canvas.height = height;
+      return true;
+    }
+    return false;
+  }
+
+function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
     var shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
@@ -41,9 +57,24 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
     gl.deleteShader(shader);
 }
 
-(function start() {
+function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (success) {
+        console.log('%c program successfull created', 'color:green')
+        return program;
+    }
+    const rc = gl.getProgramInfoLog(program)
+    console.log(`%c error creating program ${rc}`, 'color:red')
+    gl.deleteProgram(program);
+}
+
+window.onload = function start() {
     const canvas: HTMLCanvasElement = <any>document.getElementById('gpu')
-    const gl: WebGLRenderingContext = <WebGLRenderingContext>canvas.getContext('webgl2')
+    const gl: WebGL2RenderingContext = <WebGL2RenderingContext>canvas.getContext('webgl2')
     if (!gl) {
         console.log('%c no webgl2', 'color:red')
         return
@@ -52,7 +83,75 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
     if (!ext) {
         console.log('%c your webgl2 doesnt support rendering to 32bit textures', 'color:red')
     }
-    gl.VERTEX_SHADER
-    console.log('webgl2 rendering 32float fully operational')
-})()
+    console.log('%c webgl2 rendering 32float fully operational', 'color:green')
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    if (!vertexShader || !fragmentShader) return;
+    const program = createProgram(gl, vertexShader, fragmentShader)
+
+    // init section
+   
+    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+    const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); // make it the current buffer
+
+    const positions = [
+        10, 20,
+        80, 20,
+        10, 30,
+        10, 30,
+        80, 20,
+        80, 30,
+    ];
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    // vertext array object
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao); // make it the current vao
+   
+    gl.enableVertexAttribArray(positionAttributeLocation) // bind it to the "a_position" attribute
+    // tell how data should be presented to the "vec4 a_position"
+    const size = 2;          // 2 components per iteration
+    const type = gl.FLOAT;   // the data is 32bit floats
+    const normalize = false; // has no effect because type = gl.FLOAT
+    const stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+    const offset = 0;        // start at the beginning of the buffer
+    gl.vertexAttribPointer(
+        positionAttributeLocation,
+        size,
+        type,
+        normalize,
+        stride,
+        offset
+    )
+
+   
+
+    console.log('viewpor range', gl.getParameter(gl.MAX_VIEWPORT_DIMS))
+    console.log('current viewportsize', gl.getParameter(gl.VIEWPORT))
+    console.log('gl.canvas size', gl.canvas.width, gl.canvas.height)
+    console.log('canvas size', canvas.width, canvas.height)
+    console.log('canvas clientsize', canvas.clientWidth, canvas.clientHeight)
+    console.log('canvas dims', canvas.style.width, canvas.style.height)
+
+    const canvasStyles = window.getComputedStyle(canvas)
+    console.log('canvasStyles',canvasStyles.width, canvasStyles.height)
+    canvas.width = Number.parseInt(canvasStyles.width)
+    canvas.height = Number.parseInt(canvasStyles.height)
+    
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
+    console.log('dbdim',gl.drawingBufferWidth, gl.drawingBufferHeight)
+        
+    gl.clearColor(0.0, 0.0, 0.0, 0); //transparantblack
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(program);
+    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    gl.bindVertexArray(vao);
+   
+    const primitiveType = gl.TRIANGLES;
+    const count = 6;
+    gl.drawArrays(primitiveType, offset, count);
+
+}
 

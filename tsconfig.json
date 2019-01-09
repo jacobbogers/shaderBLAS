@@ -4,6 +4,7 @@
     "noImplicitAny": true,
     "module": "commonjs",
     "target": "es5",
+    "lib": ["es2018", "dom", "esnext"],
     "sourceMap": true
   }
 }
