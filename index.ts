@@ -74,7 +74,7 @@ function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fr
 
 window.onload = function start() {
     const canvas: HTMLCanvasElement = <any>document.getElementById('gpu')
-    const gl: WebGL2RenderingContext = <WebGL2RenderingContext>canvas.getContext('webgl2')
+    const gl: WebGL2RenderingContext = canvas.getContext('webgl2')
     if (!gl) {
         console.log('%c no webgl2', 'color:red')
         return
