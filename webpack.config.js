@@ -14,7 +14,10 @@ module.exports = env => {
 
   const rc = {
     mode: 'development',
-    entry: resolve('./index.ts'),
+    entry: {
+      sample1: resolve('./sample1.ts'),
+      sample2: resolve('./sample2.ts')
+    },
     module: {
       rules: [{
         test: /\.tsx?$/,
@@ -26,7 +29,7 @@ module.exports = env => {
       extensions: ['.ts','.js']
     },
     output: {
-      filename: 'bundle.js',
+      filename: '[name].js',
       path: resolve('./dist')
     },
     plugins: [

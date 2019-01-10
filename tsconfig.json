@@ -5,6 +5,7 @@
     "module": "commonjs",
     "target": "es6",
     "lib": ["es2018", "dom", "esnext"],
-    "sourceMap": true
+    "sourceMap": true,
+    "typeRoots": ["node_modules/@types", "./types"]
   }
 }

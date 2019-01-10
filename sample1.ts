@@ -1,4 +1,7 @@
 'use strict'
+
+import * as twgl from 'twgl.js'
+
 const vertexShaderSource: string = `#version 300 es
 
 in vec2 a_position;

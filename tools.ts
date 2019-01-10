@@ -5,13 +5,13 @@ export function createContext(extensions:string[], trowIfFail = true){
     }
     const gl = canvas.getContext('webgl2')
     if (!gl){
-        throw new Error(`no webgl2 available`)
+        throw new Error(`No webgl2 available`)
     }
     const registered = extensions.map<[string, any]>( extension => [extension, gl.getExtension(extension)])
     const errors = registered.filter( f => !f[1]).map( f => f[0]) // get the "falsies"
     if (errors.length){
         if (trowIfFail){
-          throw new Error(`these extentions could not be registered:${JSON.stringify(errors)}`)
+          throw new Error(`These extentions could not be registered:${JSON.stringify(errors)}`)
         }
     }
     const supported = gl.getSupportedExtensions()
@@ -106,32 +106,3 @@ function main() {
 
 main();
 */
-
-export function getExtentions(fn: get)
-
-
-
-
-    return function extentions()
-    // defensive 
-    const supported = WebGLRenderingContext.getSupportedExtensions
-    const select = new Map<string, any>(
-        extensions.map<[string, any]>( extension => [ extension, gl.getExtension( extension)] )
-    )
-    //find 
-    
-    /*if (select.find()){
-
-    
-    }*/
-
-}
-
-if (!gl) {
-    console.log('%c no webgl2', 'color:red')
-    return
-}
-const ext = gl.getExtension('EXT_color_buffer_float')
-if (!ext) {
-    console.log('%c your webgl2 doesnt support rendering to 32bit textures', 'color:red')
-}
