@@ -2,9 +2,11 @@
 // from https://webgl2fundamentals.org/webgl/webgl-2d-image-processing.html
 
 "use strict";
+import * as twgl from 'twgl.js'
+import { createContext } from './tools'
 
-import  jpg from './leaves.jpg'
-
+const jpg = require('./leaves.jpg')
+const glsl = (x: any) => x;
 // This is needed if the images are not on the same domain
 // NOTE: The server providing the images must give CORS permissions
 // in order to be able to use the image with WebGL. Most sites
@@ -16,7 +18,7 @@ import  jpg from './leaves.jpg'
 //  }
 //}
 
-const vertexShaderSource = `#version 300 es
+const vs = glsl`#version 300 es
 
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
@@ -50,14 +52,14 @@ void main() {
 }
 `;
 
-const fragmentShaderSource = `#version 300 es
+const fs = glsl`#version 300 es
 
 // fragment shaders don't have a default precision so we need
 // to pick one. mediump is a good default. It means "medium precision"
 precision mediump float;
 
-// our texture
-uniform sampler2D u_image;
+
+uniform sampler2D u_image; // our texture
 
 // the convolution kernal data
 uniform float u_kernel[9];
@@ -96,18 +98,15 @@ async function createImage(url){
 }
 
 
-function render(image) {
-  // Get A WebGL context
-  /** @type {HTMLCanvasElement} */
-  var canvas = document.getElementById("canvas");
-  var gl = canvas.getContext("webgl2");
-  if (!gl) {
-    return;
-  }
+
+function start(image:HTMLImageElement) {
+
+  const glx = createContext(['EXT_color_buffer_float'], true)
+  const gl = glx.gl
 
   // setup GLSL program
-  var program = webglUtils.createProgramFromSources(gl,
-      [vertexShaderSource, fragmentShaderSource]);
+  const program = twgl.createProgramFromSources(gl, [vs, fs]);
+ 
 
   // look up where the vertex data needs to go.
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");

@@ -1,4 +1,4 @@
-export function createContext(extensions:string[], trowIfFail = true){
+export function createContext(extensions:string[], trowIfFail = true): { supported: string[], ext: string[], canvas:HTMLCanvasElement, gl: WebGL2RenderingContext }{
     const canvas = document.createElement('canvas')
     if (!canvas){
         throw new Error(`Could not create canvas`)
@@ -19,13 +19,13 @@ export function createContext(extensions:string[], trowIfFail = true){
     const rc = {}
     Object.defineProperties(rc, {
         supported: {
-            value: supported,
+            value: Object.freeze(supported),
             writeable: false,
             configurable: false,
             enumerable: false
         },
         ext: {
-            value: ext,
+            value: Object.freeze(ext),
             writeable: false,
             configurable: false,
             enumerable: false
@@ -42,8 +42,8 @@ export function createContext(extensions:string[], trowIfFail = true){
             configurable: false,
             enumerable: true
         }
-    })
-    return rc;
+    }) 
+    return rc as { supported: string[], ext: string[], canvas:HTMLCanvasElement, gl: WebGL2RenderingContext }
 }
 
 /*
