@@ -1,5 +1,6 @@
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
+
 const {
   resolve
 } = require('path');
@@ -19,14 +20,30 @@ module.exports = env => {
       sample2: resolve('./sample2.ts')
     },
     module: {
-      rules: [{
-        test: /\.tsx?$/,
-        use: 'ts-loader',
-        exclude: /node_modules/
-      }]
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/
+        },
+        {
+          test: /\.(png|jpg|gif)$/,
+          use: [{
+            loader: 'file-loader',
+            options: {
+              name(file) {
+                if (process.env.NODE_ENV === 'development') {
+                  return '[path][name].[ext]';
+                }
+                return '[hash].[ext]';
+              },
+            },
+          }], // use
+        },
+      ]
     },
     resolve: {
-      extensions: ['.ts','.js']
+      extensions: ['.ts', '.js', '.jpg']
     },
     output: {
       filename: '[name].js',

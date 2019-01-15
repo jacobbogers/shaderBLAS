@@ -3,7 +3,20 @@
 
 "use strict";
 
-var vertexShaderSource = `#version 300 es
+import  jpg from './leaves.jpg'
+
+// This is needed if the images are not on the same domain
+// NOTE: The server providing the images must give CORS permissions
+// in order to be able to use the image with WebGL. Most sites
+// do NOT give permission.
+// See: http://webglfundamentals.org/webgl/lessons/webgl-cors-permission.html
+//function requestCORSIfNotSameOrigin(img, url) {
+//  if ((new URL(url)).origin !== window.location.origin) {
+//    img.crossOrigin = "";
+//  }
+//}
+
+const vertexShaderSource = `#version 300 es
 
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
@@ -37,7 +50,7 @@ void main() {
 }
 `;
 
-var fragmentShaderSource = `#version 300 es
+const fragmentShaderSource = `#version 300 es
 
 // fragment shaders don't have a default precision so we need
 // to pick one. mediump is a good default. It means "medium precision"
@@ -73,14 +86,15 @@ void main() {
 }
 `;
 
-function main() {
-  var image = new Image();
-  requestCORSIfNotSameOrigin(image, "https://webgl2fundamentals.org/webgl/resources/leaves.jpg")
-  image.src = "https://webgl2fundamentals.org/webgl/resources/leaves.jpg";
-  image.onload = function() {
-    render(image);
-  };
+async function createImage(url){
+   return new Promise((resolve,reject)=>{
+      const img = new Image()
+      img.crossOrigin = ""
+      img.addEventListener('error', reject)
+      img.addEventListener('load', resolve)
+   })
 }
+
 
 function render(image) {
   // Get A WebGL context
@@ -467,18 +481,10 @@ function setRectangle(gl, x, y, width, height) {
   ]), gl.STATIC_DRAW);
 }
 
-$(function(){
-  main();
-});
 
 
-// This is needed if the images are not on the same domain
-// NOTE: The server providing the images must give CORS permissions
-// in order to be able to use the image with WebGL. Most sites
-// do NOT give permission.
-// See: http://webglfundamentals.org/webgl/lessons/webgl-cors-permission.html
-function requestCORSIfNotSameOrigin(img, url) {
-  if ((new URL(url)).origin !== window.location.origin) {
-    img.crossOrigin = "";
-  }
+
+
+window.onload = start(){
+  createImage().then()
 }
