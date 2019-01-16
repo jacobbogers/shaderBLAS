@@ -1,4 +1,5 @@
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 
 const {
@@ -8,7 +9,7 @@ const {
 module.exports = env => {
 
   const cleanOptions = {
-    root: resolve('.'),
+    root: resolve('./dist'),
     verbose: true,
     dry: false
   }
@@ -16,8 +17,8 @@ module.exports = env => {
   const rc = {
     mode: 'development',
     entry: {
-      sample1: resolve('./sample1.ts'),
-      sample2: resolve('./sample2.ts')
+      sample1: resolve('./src/ex4/sample1.ts'),
+      
     },
     module: {
       rules: [

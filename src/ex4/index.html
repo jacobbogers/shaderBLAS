@@ -1,10 +1,21 @@
-<canvas id="canvas"></canvas>
-
-<!--
-for most samples webgl-utils only provides shader compiling/linking and
-canvas resizing because why clutter the examples with code that's the same in every sample.
-See http://webgl2fundamentals.org/webgl/lessons/webgl-boilerplate.html
-and http://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
-for webgl-utils, m3, m4, and webgl-lessons-ui.
--->
-<script src="https://webgl2fundamentals.org/webgl/resources/webgl-utils.js"></script>
+<html>
+    <head>
+        <style>
+         html, body {
+             margin:0;
+             padding:0;
+         }   
+         #gpu {
+             width: 600px;
+             height: calc( 100% - 8px );
+             border: 4px black solid;
+         }
+        </style>
+    </head>
+    <body>
+        <div>
+            <canvas id="gpu"></canvas>
+        </div>
+        <script src="dist/sample4.js"></script>
+    </body>
+</html>

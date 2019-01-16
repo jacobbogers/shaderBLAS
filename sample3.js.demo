@@ -3,7 +3,7 @@
 
 "use strict";
 import * as twgl from 'twgl.js'
-import { createContext } from './tools'
+import { createContext } from './src/tools/tools'
 
 const jpg = require('./leaves.jpg')
 const glsl = (x: any) => x;

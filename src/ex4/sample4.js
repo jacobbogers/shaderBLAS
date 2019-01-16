@@ -6,13 +6,10 @@ const glsl = x => x
 
 var vertexShaderSource = glsl`#version 300 es
 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
 in vec2 a_position;
 in vec2 a_texCoord;
 
-// Used to pass in the resolution of the canvas
-uniform vec2 u_resolution;
+uniform vec2 u_resolution; //pass resolution canvas
 
 // Used to pass the texture coordinates to the fragment shader
 out vec2 v_texCoord;
