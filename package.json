@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:html": "webpack --progress --color --display-error-details --mode development --config webpack.config.html-gen.js",
-    "build": "webpack --progress --color --display-error-details --env=ex-libr-ts",
+    "build": "webpack --progress --color --display-error-details",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "jacob.bogers <jkfbogers@gmail.com>",
