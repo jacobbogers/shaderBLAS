@@ -8,6 +8,6 @@
     "lib": ["es2018", "es2017", "es6", "dom", "esnext"],
     "sourceMap": true,
     "typeRoots": ["node_modules/@types", "./types"],
-    "rootDir": "src"
+    "rootDir": "."
   }
 }

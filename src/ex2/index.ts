@@ -1,4 +1,7 @@
 import * as twgl from 'twgl.js'
+import * as debug from 'debug'
+
+const log = debug('example2')
 
 const vs = `#version 300 es
 void main() {
@@ -25,6 +28,7 @@ void main() {
   outColor = color / float(size.x / numArrays * size.y);
 }
 `;
+
 
 function main() {
   
@@ -71,7 +75,8 @@ function main() {
   for (let i = 0; i < numArrays; ++i) {
     gpuAverages.push(gpuData[i * 4]); // Because we're only using the RED channel
   }
-  console.log('gpuAverage:', gpuAverages.join(', '));
+  log('gpuAverage:', gpuAverages.join(', '));
+
 }
 
-window.onload=main
+window.addEventListener('load', main)

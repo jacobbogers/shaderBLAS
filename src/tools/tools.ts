@@ -1,4 +1,4 @@
-export function createContext(extensions:string[], trowIfFail = true): { supported: string[], ext: string[], canvas:HTMLCanvasElement, gl: WebGL2RenderingContext }{
+export function createContext(extensions:string[] = [], trowIfFail = true): { supported: string[], ext: string[], canvas:HTMLCanvasElement, gl: WebGL2RenderingContext }{
     const canvas = document.createElement('canvas')
     if (!canvas){
         throw new Error(`Could not create canvas`)

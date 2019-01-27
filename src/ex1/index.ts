@@ -1,6 +1,10 @@
 'use strict'
 
 import * as twgl from 'twgl.js'
+import * as debug from 'debug'
+
+
+const log = debug('example1')
 
 const vertexShaderSource: string = `#version 300 es
 
@@ -38,7 +42,7 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, multiplier = 1) {
     const width  = canvas.clientWidth  * multiplier || 0;
     const height = canvas.clientHeight * multiplier || 0;
 
-    console.log({ width, cw: canvas.clientWidth, height, ch: canvas.clientHeight })
+    log({ width, cw: canvas.clientWidth, height, ch: canvas.clientHeight })
     
     if (canvas.width !== width ||  canvas.height !== height) {
       canvas.width  = width;
@@ -56,7 +60,7 @@ function createShader(gl: WebGL2RenderingContext, type: number, source: string) 
     if (success) {
         return shader;
     }
-    console.log(`%c ${gl.getShaderInfoLog(shader)}`, 'color:red');
+    log(`%c ${gl.getShaderInfoLog(shader)}`, 'color:red');
     gl.deleteShader(shader);
 }
 
@@ -67,26 +71,26 @@ function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fr
     gl.linkProgram(program);
     var success = gl.getProgramParameter(program, gl.LINK_STATUS);
     if (success) {
-        console.log('%c program successfull created', 'color:green')
+        log('%c program successfull created', 'color:green')
         return program;
     }
     const rc = gl.getProgramInfoLog(program)
-    console.log(`%c error creating program ${rc}`, 'color:red')
+    log(`%c error creating program ${rc}`, 'color:red')
     gl.deleteProgram(program);
 }
 
-window.onload = function start() {
+function start() {
     const canvas: HTMLCanvasElement = <any>document.getElementById('gpu')
     const gl: WebGL2RenderingContext = canvas.getContext('webgl2')
     if (!gl) {
-        console.log('%c no webgl2', 'color:red')
+        log('%c no webgl2', 'color:red')
         return
     }
     const ext = gl.getExtension('EXT_color_buffer_float')
     if (!ext) {
-        console.log('%c your webgl2 doesnt support rendering to 32bit textures', 'color:red')
+        log('%c your webgl2 doesnt support rendering to 32bit textures', 'color:red')
     }
-    console.log('%c webgl2 rendering 32float fully operational', 'color:green')
+    log('%c webgl2 rendering 32float fully operational', 'color:green')
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     if (!vertexShader || !fragmentShader) return;
@@ -131,20 +135,20 @@ window.onload = function start() {
 
    
 
-    console.log('viewpor range', gl.getParameter(gl.MAX_VIEWPORT_DIMS))
-    console.log('current viewportsize', gl.getParameter(gl.VIEWPORT))
-    console.log('gl.canvas size', gl.canvas.width, gl.canvas.height)
-    console.log('canvas size', canvas.width, canvas.height)
-    console.log('canvas clientsize', canvas.clientWidth, canvas.clientHeight)
-    console.log('canvas dims', canvas.style.width, canvas.style.height)
+    log('viewpor range', gl.getParameter(gl.MAX_VIEWPORT_DIMS))
+    log('current viewportsize', gl.getParameter(gl.VIEWPORT))
+    log('gl.canvas size', gl.canvas.width, gl.canvas.height)
+    log('canvas size', canvas.width, canvas.height)
+    log('canvas clientsize', canvas.clientWidth, canvas.clientHeight)
+    log('canvas dims', canvas.style.width, canvas.style.height)
 
     const canvasStyles = window.getComputedStyle(canvas)
-    console.log('canvasStyles',canvasStyles.width, canvasStyles.height)
+    log('canvasStyles',canvasStyles.width, canvasStyles.height)
     canvas.width = Number.parseInt(canvasStyles.width)
     canvas.height = Number.parseInt(canvasStyles.height)
     
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-    console.log('dbdim',gl.drawingBufferWidth, gl.drawingBufferHeight)
+    log('dbdim',gl.drawingBufferWidth, gl.drawingBufferHeight)
         
     gl.clearColor(0.0, 0.0, 0.0, 0); //transparantblack
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -158,3 +162,4 @@ window.onload = function start() {
 
 }
 
+window.addEventListener('load',start)

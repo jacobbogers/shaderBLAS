@@ -1,6 +1,6 @@
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-
+const NodeExternals = require('webpack-node-externals')
 
 const {
   resolve
@@ -17,11 +17,20 @@ module.exports = env => {
   const rc = {
     mode: 'development',
     entry: {
-      sample1: resolve('./src/ex4/sample1.ts'),
-      
+      ex1: resolve('./src/ex1/index.ts'),
+      ex2: resolve('./src/ex2/index.ts'),
+      ex3: resolve('./src/ex3/index.ts'),
     },
+   output: {
+    filename: '[name]/bundle.js',
+    path: resolve('./dist')
+  },
     module: {
       rules: [
+        {
+          test:/\.glsl$/,
+          use:'raw-loader'
+        },
         {
           test: /\.tsx?$/,
           use: 'ts-loader',
@@ -43,17 +52,23 @@ module.exports = env => {
         },
       ]
     },
+  
     resolve: {
-      extensions: ['.ts', '.js', '.jpg']
-    },
-    output: {
-      filename: '[name].js',
-      path: resolve('./dist')
+      extensions: ['.ts', '.js', '.jpg','.glsl']
     },
     plugins: [
-      new CleanWebpackPlugin('./dist', cleanOptions)
+      new CleanWebpackPlugin('./dist', cleanOptions),
+      new HtmlWebpackPlugin({
+        title:'all-the-demos',
+        template: resolve('./src/_index.html')
+      }),
     ],
-    devtool: 'source-map'
+    devtool: 'source-map',
+    externals:[
+      NodeExternals({
+        whitelist:['debug','ms','twgl.js']
+      })
+    ]
   }
   return rc;
 }
