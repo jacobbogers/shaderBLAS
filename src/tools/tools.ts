@@ -132,7 +132,7 @@ export function createProgramContext(
     for (const name of names) {
       const loc = gl.getUniformLocation(program, name);
       if (loc !== undefined || loc !== null) {
-        uniforms.set(name, gl.getUniformLocation(program, name));
+        uniforms.set(name, loc);
       }
     }
   }
@@ -142,7 +142,7 @@ export function createProgramContext(
     for (const name of names) {
       const loc = gl.getAttribLocation(program, name);
       if (loc !== undefined || loc !== null) {
-        attribs.set(name, gl.getAttribLocation(program, name));
+        attribs.set(name, loc);
       }
     }
   }
