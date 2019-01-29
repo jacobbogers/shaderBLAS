@@ -189,10 +189,14 @@ export async function loadImage(url: string) {
     xhr.send();
   }).then(
     (response: { responseType: XMLHttpRequestResponseType; data: any }) => {
-      const img = new Image();
-      img.addEventListener("load", () => URL.revokeObjectURL(img.src));
-      img.src = URL.createObjectURL(response.data);
-      return img;
+      return new Promise((resolve)=>{
+        const img = new Image();
+        img.onload = () => {
+           URL.revokeObjectURL(img.src);
+           resolve(img)
+        }
+        img.src = URL.createObjectURL(response.data);
+      })
     }
   );
   rc["xhr"] = xhr;
