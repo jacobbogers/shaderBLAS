@@ -167,6 +167,7 @@ export function createProgramContext(
   ];
 }
 
+
 export async function loadImage(url: string) {
   const xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
