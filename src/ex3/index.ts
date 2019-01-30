@@ -5,6 +5,8 @@ import {
   loadImage
 } from "../tools/tools";
 
+import { kernels } from './kernels'
+
 const fs: string = require("./fs.glsl");
 const vs: string = require("./vs.glsl");
 const pic: string = require("../assets/leaves.jpg");
@@ -31,6 +33,7 @@ async function start() {
   pgCtx.registerAttributes(["a_position", "a_texCoord"]);
 
   const { gl } = ctx;
+  const buffers = new Map<string, WebGLBuffer>()
 
   // Create a vertex array object (attribute state)
   const vao = gl.createVertexArray();
@@ -39,6 +42,8 @@ async function start() {
   // buffer for the a_position attribute
   {
     const buffer = gl.createBuffer();
+    buffers.set("a_posiiton", buffer)
+
     gl.enableVertexAttribArray(pgCtx.getAttribute("a_position"));
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.vertexAttribPointer(
@@ -54,6 +59,7 @@ async function start() {
   //buffer for attribute "a_texCoord"
   {
     const buffer = gl.createBuffer();
+    buffers.set("a_texCoord", buffer)
     gl.enableVertexAttribArray(pgCtx.getAttribute("a_texCoord"));
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(
@@ -84,6 +90,26 @@ async function start() {
       0 /*offset start at the beginning of the buffer*/
     );
   }
+
+  const setRectangle = (x: number, y: number, width: number, height: number) =>
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        x,
+        y,
+        x + width,
+        y,
+        x,
+        y + height,
+        x,
+        y + height,
+        x + width,
+        y + height,
+        x + width,
+        y + height
+      ]),
+      gl.STATIC_DRAW
+    );
 
   function createAndSetupTexture(gl: WebGL2RenderingContext) {
     const texture = gl.createTexture();
@@ -155,7 +181,17 @@ async function start() {
       );
     }
   }
-  // textures are now created
+  // done creating all source/dest textures
+  
+  // set size in pixels of the positionbuffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.get("a_position"),);
+  setRectangle(0, 0, jpeg.width, jpeg.height);
+  gl.enableVertexAttribArray(pgCtx.getAttribute('a_position'))
+   
+
+  //drawEffects()
+
+
 }
 
 window.addEventListener("load", start);
