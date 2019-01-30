@@ -28,72 +28,13 @@ async function start() {
 
   [pgCtx, err] = createProgramContext(ctx, vs, fs);
   pgCtx.registerUniforms([
-    "u_resolution",
     "u_image",
     "u_kernel[0]",
     "u_kernelWeight",
-    "u_flipY"
   ]);
-  pgCtx.registerAttributes(["a_position", "a_texCoord"]);
 
   const { gl } = ctx;
   const buffers = new Map<string, WebGLBuffer>()
-
-  // Create a vertex array object (attribute state)
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-
-  // buffer for the a_position attribute
-  {
-    const buffer = gl.createBuffer();
-    buffers.set("a_position", buffer)
-
-    gl.enableVertexAttribArray(pgCtx.getAttribute("a_position"));
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.vertexAttribPointer(
-      pgCtx.getAttribute("a_position"),
-      2, //size: components per iteration,
-      gl.FLOAT, //type  the data is 32bit floats
-      false, // dont normalize the data
-      0, //stride 0 = move forward size * sizeof(type) each iteration to get the next position
-      0 //offset // start at the beginning of the buffer
-    );
-  }
-
-  //buffer for attribute "a_texCoord"
-  {
-    const buffer = gl.createBuffer();
-    buffers.set("a_texCoord", buffer)
-    gl.enableVertexAttribArray(pgCtx.getAttribute("a_texCoord"));
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        1.0,
-        0.0,
-        1.0,
-        1.0
-      ]),
-      gl.STATIC_DRAW
-    );
-
-    gl.vertexAttribPointer(
-      pgCtx.getAttribute("a_texCoord"),
-      2 /*size components per iteration*/,
-      gl.FLOAT /*type the data is 32bit floats*/,
-      false /*normalize don't normalize the data*/,
-      0 /*stride 0 = move forward size * sizeof(type) each iteration to get the next position */,
-      0 /*offset start at the beginning of the buffer*/
-    );
-  }
 
   const setRectangle = (x: number, y: number, width: number, height: number) =>
     gl.bufferData(
@@ -186,14 +127,7 @@ async function start() {
     }
   }
   // done creating all source/dest textures
-  
-  // set size in pixels of the positionbuffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.get("a_position"),);
-  setRectangle(0, 0, jpeg.width, jpeg.height);
-  gl.enableVertexAttribArray(pgCtx.getAttribute('a_position'))
-  
 
-  //drawEffects()
   gl.canvas.width = jpeg.width
   gl.canvas.height = jpeg.height
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -204,21 +138,18 @@ async function start() {
   gl.useProgram(pgCtx.program);
   
   // bind the attributes via the vao
-  gl.bindVertexArray(vao);
+  //gl.bindVertexArray(vao);
   // start with the original image on unit 0 (there are 2?)
   gl.activeTexture(gl.TEXTURE0 + 0);
   gl.bindTexture(gl.TEXTURE_2D, jpegTexture);
   gl.uniform1i(pgCtx.getUniform('u_image'), 0);
-  // dont flip image
-  gl.uniform1f(pgCtx.getUniform('u_flipY'), 1);
 
-  // destination is fbo0 and its texture??
   {//setframebuffer function
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[0]);
-  gl.uniform2f(pgCtx.getUniform('u_resolution'), width, height);
+  //gl.uniform2f(pgCtx.getUniform('u_resolution'), width, height);
   gl.viewport(0, 0, width, height); // viewport of the framebuffer, dont think this is needed though??
   }
-  // Clear the canvas (you mean output texture?)
+  // Clear destination buffer associated texture?
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -229,9 +160,9 @@ async function start() {
     gl.uniform1f(pgCtx.getUniform('u_kernelWeight'), kernelWeight);
 
     // Draw the rectangle.
-    var primitiveType = gl.TRIANGLES;
+    var primitiveType = gl.POINTS;
     var offset = 0;
-    var count = 6;
+    var count = width*height;
     gl.drawArrays(primitiveType, offset, count);
     const pixels = new Uint8Array(width*height*4);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels , 0);
