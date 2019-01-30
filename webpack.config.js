@@ -8,6 +8,8 @@ const {
 
 module.exports = env => {
 
+  const random = Math.trunc(Math.random()*1E7)
+
   const cleanOptions = {
     root: resolve('./dist'),
     verbose: true,
@@ -22,7 +24,7 @@ module.exports = env => {
       ex3: resolve('./src/ex3/index.ts'),
     },
    output: {
-    filename: '[name]/bundle.js',
+    filename: `[name]/${random}-[hash]-bundle.js`,
     path: resolve('./dist')
   },
     module: {
@@ -57,7 +59,7 @@ module.exports = env => {
       extensions: ['.ts', '.js', '.jpg','.glsl']
     },
     plugins: [
-      new CleanWebpackPlugin('./dist', cleanOptions),
+      new CleanWebpackPlugin(['ex1','ex2','ex3','ex4'], cleanOptions),
       new HtmlWebpackPlugin({
         title:'all-the-demos',
         template: resolve('./src/_index.html')
