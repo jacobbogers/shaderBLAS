@@ -55,7 +55,6 @@ async function start() {
   function createAndSetupTexture(gl: WebGL2RenderingContext) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -110,9 +109,10 @@ async function start() {
     outputText,
     mipLevel
   );
-  
+  //gl.canvas.width = width;
+  //gl.canvas.height = height;
   gl.viewport(0, 0, width, height);
-  gl.clearColor(0, 0, 0, 0);
+  gl.clearColor(1, 1, 1, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // Tell it to use our program (pair of shaders)
@@ -125,11 +125,11 @@ async function start() {
   //setframebuffer function
   gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo);
   //gl.uniform2f(pgCtx.getUniform('u_resolution'), width, height);
-  gl.viewport(0, 0, width, height); // viewport of the framebuffer, dont think this is needed though??
+  //gl.viewport(0, 0, width, height); // viewport of the framebuffer, dont think this is needed though??
 
   // Clear destination buffer associated texture?
-  gl.clearColor(0.2, 0.5, 0.75,1);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  
+  //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   {
     // draw with kernel

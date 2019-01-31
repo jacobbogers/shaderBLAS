@@ -26,6 +26,6 @@ void main() {
       texelFetch(u_image, xy + ivec2(-1,  1), level) * u_kernel[6] +
       texelFetch(u_image, xy + ivec2( 0,  1), level) * u_kernel[7] +
       texelFetch(u_image, xy + ivec2( 1,  1), level) * u_kernel[8] ;
-      
-  outColor = vec4(0,0,0,1); //vec4( (colorSum/ u_kernelWeight).rgb ,1);
+  //outColor = vec4( (colorSum/ u_kernelWeight).rgb ,1);
+  outColor = texelFetch(u_image, xy + ivec2(1), level); 
 }
