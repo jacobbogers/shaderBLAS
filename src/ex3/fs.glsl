@@ -4,7 +4,7 @@
 // to pick one. mediump is a good default. It means "medium precision"
 precision mediump float;
 
-
+precision highp float;
 uniform sampler2D u_image; // our texture
 uniform float u_kernel[9];
 uniform float u_kernelWeight;
