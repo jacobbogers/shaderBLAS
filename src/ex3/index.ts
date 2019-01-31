@@ -27,30 +27,15 @@ async function start() {
   }
 
   [pgCtx, err] = createProgramContext(ctx, vs, fs);
+  if (err) {
+    console.log(err)
+    return;
+  }
   pgCtx.registerUniforms(["u_image", "u_kernel[0]", "u_kernelWeight"]);
-
+  
   const { gl } = ctx;
   const buffers = new Map<string, WebGLBuffer>();
-
-  const setRectangle = (x: number, y: number, width: number, height: number) =>
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([
-        x,
-        y,
-        x + width,
-        y,
-        x,
-        y + height,
-        x,
-        y + height,
-        x + width,
-        y + height,
-        x + width,
-        y + height
-      ]),
-      gl.STATIC_DRAW
-    );
+  console.log('pointsize=',gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE))
 
   function createAndSetupTexture(gl: WebGL2RenderingContext) {
     const texture = gl.createTexture();
@@ -81,7 +66,7 @@ async function start() {
   const mipLevel = 0; // the largest mip
   const internalFormat = gl.RGBA; // format we want in the texture
   const border = 0; // must be 0
-  const srcFormat = gl.RGBA; // format of data we are supplying
+  const srcFormat = gl.RGBA; // dont really care data is zero, format of data we are supplying
   const srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
   const data: ArrayBufferView = null; // no data = create a blank texture
   gl.texImage2D(
@@ -109,8 +94,8 @@ async function start() {
     outputText,
     mipLevel
   );
-  //gl.canvas.width = width;
-  //gl.canvas.height = height;
+  gl.canvas.width = width;
+  gl.canvas.height = height;
   gl.viewport(0, 0, width, height);
   gl.clearColor(1, 1, 1, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -123,10 +108,10 @@ async function start() {
   gl.uniform1i(pgCtx.getUniform("u_image"), 0);
 
   //setframebuffer function
-  gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo);
+  //gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo);
   //gl.uniform2f(pgCtx.getUniform('u_resolution'), width, height);
   //gl.viewport(0, 0, width, height); // viewport of the framebuffer, dont think this is needed though??
-
+  gl.viewport(0, 0, width, height);
   // Clear destination buffer associated texture?
   
   //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

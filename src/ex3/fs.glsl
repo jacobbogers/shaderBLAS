@@ -13,10 +13,12 @@ uniform float u_kernelWeight;
 out vec4 outColor;
 
 void main() {
-
+  vec2 size = vec2(textureSize(u_image, 0));
   int level = 0;
-  ivec2 xy = ivec2(gl_FragCoord.xy);
-  vec4 colorSum =
+  vec2 xy = vec2(gl_FragCoord.xy) + vec2(-1,1);
+  float red = (xy.x - 0.5)/255.0;
+  float green = (xy.y - 0.5)/255.0;
+  /*vec4 colorSum =
       texelFetch(u_image, xy + ivec2(-1, -1), level) * u_kernel[0] +
       texelFetch(u_image, xy + ivec2( 0, -1), level) * u_kernel[1] +
       texelFetch(u_image, xy + ivec2( 1, -1), level) * u_kernel[2] +
@@ -25,7 +27,8 @@ void main() {
       texelFetch(u_image, xy + ivec2( 1,  0), level) * u_kernel[5] +
       texelFetch(u_image, xy + ivec2(-1,  1), level) * u_kernel[6] +
       texelFetch(u_image, xy + ivec2( 0,  1), level) * u_kernel[7] +
-      texelFetch(u_image, xy + ivec2( 1,  1), level) * u_kernel[8] ;
+      texelFetch(u_image, xy + ivec2( 1,  1), level) * u_kernel[8] ;*/
   //outColor = vec4( (colorSum/ u_kernelWeight).rgb ,1);
-  outColor = texelFetch(u_image, xy + ivec2(1), level); 
+  //outColor = texelFetch(u_image, xy + ivec2(1), level); 
+  outColor = vec4(red, green , 0.3137, 0.411764);
 }
