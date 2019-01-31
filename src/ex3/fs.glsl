@@ -14,16 +14,18 @@ out vec4 outColor;
 
 void main() {
 
-  /*vec4 colorSum =
-      texture(u_image, v_texCoord + vec2(-1, -1)) * u_kernel[0] +
-      texture(u_image, v_texCoord + vec2( 0, -1)) * u_kernel[1] +
-      texture(u_image, v_texCoord + vec2( 1, -1)) * u_kernel[2] +
-      texture(u_image, v_texCoord + vec2(-1,  0)) * u_kernel[3] +
-      texture(u_image, v_texCoord + vec2( 0,  0)) * u_kernel[4] +
-      texture(u_image, v_texCoord + vec2( 1,  0)) * u_kernel[5] +
-      texture(u_image, v_texCoord + vec2(-1,  1)) * u_kernel[6] +
-      texture(u_image, v_texCoord + vec2( 0,  1)) * u_kernel[7] +
-      texture(u_image, v_texCoord + vec2( 1,  1)) * u_kernel[8] ;*/
+  int level = 0;
+  ivec2 xy = ivec2(gl_FragCoord.xy);
+  vec4 colorSum =
+      texelFetch(u_image, xy + ivec2(-1, -1), level) * u_kernel[0] +
+      texelFetch(u_image, xy + ivec2( 0, -1), level) * u_kernel[1] +
+      texelFetch(u_image, xy + ivec2( 1, -1), level) * u_kernel[2] +
+      texelFetch(u_image, xy + ivec2(-1,  0), level) * u_kernel[3] +
+      texelFetch(u_image, xy + ivec2( 0,  0), level) * u_kernel[4] +
+      texelFetch(u_image, xy + ivec2( 1,  0), level) * u_kernel[5] +
+      texelFetch(u_image, xy + ivec2(-1,  1), level) * u_kernel[6] +
+      texelFetch(u_image, xy + ivec2( 0,  1), level) * u_kernel[7] +
+      texelFetch(u_image, xy + ivec2( 1,  1), level) * u_kernel[8] ;
       
-  outColor = vec4( gl_FragCoord.xy * vec2(10,10) , 0,1);
+  outColor = vec4(0,0,0,1); //vec4( (colorSum/ u_kernelWeight).rgb ,1);
 }

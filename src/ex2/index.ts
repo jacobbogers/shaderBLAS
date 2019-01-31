@@ -75,7 +75,7 @@ function main() {
   for (let i = 0; i < numArrays; ++i) {
     gpuAverages.push(gpuData[i * 4]); // Because we're only using the RED channel
   }
-  log('gpuAverage:', gpuAverages.join(', '));
+  console.log('gpuAverage:', gpuAverages.join(', '));
 
 }
 
