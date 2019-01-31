@@ -119,17 +119,36 @@ async function start() {
   {
     // draw with kernel
     // set the kernel and it's weight
-    gl.uniform1fv(pgCtx.getUniform("u_kernel[0]"), kernels.emboss.slice(1));
-    const kernelWeight = kernels.emboss[0];
+    gl.uniform1fv(pgCtx.getUniform("u_kernel[0]"), kernels.edgeDetect2.slice(1));
+    const kernelWeight = kernels.edgeDetect2[0];
     gl.uniform1f(pgCtx.getUniform("u_kernelWeight"), kernelWeight);
 
     // Draw the rectangle.
-    var primitiveType = gl.POINTS;
+    var primitiveType = gl.TRIANGLES;
     var offset = 0;
-    var count = width * height;
+    var count = 6;
     gl.drawArrays(primitiveType, offset, count);
     const pixels = new Uint8Array(width * height * 4);
+
+    console.log(width, height);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels, 0);
+    //const imageData = new ImageData(pixels, 240);
+    const canvas2 = document.createElement('canvas');
+    const ctx = canvas2.getContext('2d');
+    canvas2.width=240;
+    canvas2.height=180;
+    const imgData = ctx.getImageData(0,0,240,180);
+    for (let y=0; y< 180;y++){
+      for (let x=0; x < 240; x++){
+         const coord = (y*240+x)*4;
+         imgData.data[coord] = pixels[coord];
+         imgData.data[coord+1] = pixels[coord+1];
+         imgData.data[coord+2] = pixels[coord+2];     
+         imgData.data[coord+3] = pixels[coord+3];
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    document.body.appendChild(canvas2);
     console.log(pixels);
     //150,195,202
   }
