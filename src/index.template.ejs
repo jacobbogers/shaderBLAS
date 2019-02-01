@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #gpu {
+        width: 600px;
+        height: calc(100% - 8px);
+        border: 4px black solid;
+      }
+    </style>
+    <script>
+      localStorage.setItem("DEBUG", "example1,example2,example3"); // enable "debug output" for these namesapces
+    </script>
+  </head>
+  <body>
+    <div>
+      <canvas id="gpu"></canvas>
+    </div>
+  </body>
+</html>
