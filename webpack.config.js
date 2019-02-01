@@ -61,8 +61,8 @@ module.exports = env => {
     plugins: [
       new CleanWebpackPlugin(['ex1','ex2','ex3','ex4'], cleanOptions),
       new HtmlWebpackPlugin({
-        title:'all-the-demos',
-        template: resolve('./src/_index.html')
+        title:'😎🙈 all-the-demos',
+        template: resolve('./src/index.template.ejs')
       }),
     ],
     devtool: 'source-map',

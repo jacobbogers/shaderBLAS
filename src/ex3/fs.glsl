@@ -28,16 +28,9 @@ void main() {
   texelFetch(u_image, ivec2(xy+vec2(-1, 1)), level)*u_kernel[6]+
   texelFetch(u_image, ivec2(xy+vec2(0,1)), level)*u_kernel[7]+
   texelFetch(u_image, ivec2(xy+vec2(1, 1)), level)*u_kernel[8];
-  //vec4 colorSum =
-      /*texelFetch(u_image, ivec2(xy+vec2(-1, -1)), level) * u_kernel[0] /*+
-      texelFetch(u_image, xy + ivec2( 0, -1), level) * u_kernel[1] +
-      texelFetch(u_image, xy + ivec2( 1, -1), level) * u_kernel[2] +
-      texelFetch(u_image, xy + ivec2(-1,  0), level) * u_kernel[3] +
-      texelFetch(u_image, xy + ivec2( 0,  0), level) * u_kernel[4] +
-      texelFetch(u_image, xy + ivec2( 1,  0), level) * u_kernel[5] +
-      texelFetch(u_image, xy + ivec2(-1,  1), level) * u_kernel[6] +
-      texelFetch(u_image, xy + ivec2( 0,  1), level) * u_kernel[7] +
-      texelFetch(u_image, xy + ivec2( 1,  1), level) * u_kernel[8] */
-  outColor = vec4( (colorS/ u_kernelWeight).rgb ,1);
  
+  if (xy.x == 239.5 && xy.y == 179.5){
+    colorS.r = 1E+8; // marker
+  }    
+  outColor = vec4( (colorS/ u_kernelWeight).r ,0.0,0.0, 1.0);
 }
