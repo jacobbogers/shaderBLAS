@@ -1,9 +1,9 @@
 "use strict";
+
 export interface CreateContextReturn {
-  supported: string[];
-  ext: string[];
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
+  supported: string[];
 }
 
 export interface ProgramContextReturn {
@@ -82,7 +82,7 @@ export function createGLContext(
 
   const supported = gl.getSupportedExtensions();
   const ext = new Map(registered);
-  const rc = Object.defineProperties(
+  const rc: CreateContextReturn  = Object.defineProperties(
     {},
     {
       supported: {

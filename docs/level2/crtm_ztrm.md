@@ -1,29 +1,41 @@
-## ctrm/ztrm 
-ctrm/ztrm (single respectively double precision) and ztrmv performs one of the matrix-vector operations
+## ctrm/ztrm: x ⟵ A·x
+
+#### operations
 
 x ⟵ A·x, or x ⟵ Aᵀ·x, or x ⟵ Aᴴ·x
 
 Where `x` is an n element vector and  `A` is an `n` by `n` unit, or non-unit, upper or lower triangular matrix.
 
-#### Summary:
-Level 2 Blas routine.
-
 The vector and matrix arguments are not referenced when N = 0, or M = 0
 
-Original **Fortran** version, written on 22-October-1986.
-- Jack Dongarra, Argonne National Lab.
-- Jeremy Du Croz, Nag Central Office.
-- Sven Hammarling, Nag Central Office.
-- Richard Hanson, Sandia National Labs.
+#### precision
 
+Historicly the `ctrm` subroutine uses 32 bit floating point precision and the `ztrm` subroutine uses 64 bit floating point precision.
 
-### Syntax
+The JS implementation the `ctrm` and `ztrm` are each others alias, precision is determined by [argument construction]().
+
+The webgl2 implementation supports only 32 bit floats arguments.
+
+#### gpu enhancer
+
+For general info on the `gpu` subroutine enhancer read [here]()
+
+#### Syntax
+
 ```javascript
-const { ztrm } = require('blasjs').level2
+const { ctrm } = require('blasjs').level2 // javascript version
+const { GPU, prodGPUOptions } = require('blasjs') // gpu enhancer
+const gpu = GPU( prodGPUOptions ) // throws if webgl2 is not supported
 .
 .
-ztrm( uplo, trans, diag, n, A, lda, x ,incx)
+.
+ctrm( uplo, trans, diag, n, A, lda, x ,incx ) // use the javascript version
+.
+// or
+gpu( ctrm )( uplo, trans, diag, n, A, lda, x incx ) // use the gpu version
+.
 ```
+
 #### Parameters
 
 **uplo**: On entry, `uplo` specifies whether the matrix is an upper or lower triangular matrix as follows:
@@ -55,6 +67,15 @@ _Note: that when **diag** = "U" (or "u"), the diagonal elements of *A* are not r
 *incx*: On entry, `ìncx` specifies the increment for the elements of `x`.  `incx` must not be zero.
 
 #### Return value
+
 None
 
-[back](../README.md)
+#### history
+
+Original **Fortran** version, written on 22-October-1986.
+- Jack Dongarra, Argonne National Lab.
+- Jeremy Du Croz, Nag Central Office.
+- Sven Hammarling, Nag Central Office.
+- Richard Hanson, Sandia National Labs.
+
+[back to main page](../README.md)
