@@ -95,6 +95,7 @@ async function start() {
     log(`%c ${err}`, "color:red");
     return;
   }
+  const { gl } = ctx;
 
   console.log(`suppored:${ctx.supported}`);
 
@@ -103,9 +104,19 @@ async function start() {
     console.log(err)
     return;
   }
-  pgCtx.registerUniforms(["u_image", "u_kernel[0]", "u_kernelWeight"]);
+
+  const nrUnis = gl.getProgramParameter(pgCtx.program, gl.ACTIVE_UNIFORMS)
   
-  const { gl } = ctx;
+  console.log(`number of unis:${nrUnis}`)
+  for (let i =0; i< nrUnis; i++) {
+    const type = gl.getActiveUniform(pgCtx.program, i);
+    console.log(`uniform type of ${i} is:${type.name} ${type.size} ${type.type}`)
+  }
+
+
+  pgCtx.registerUniforms(["u_image", "u_kernel[0]", "u_kernelWeight", "u_somedumbshit"]);
+  
+ 
   const buffers = new Map<string, WebGLBuffer>();
   console.log('pointsize=',gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE))
 
@@ -177,14 +188,8 @@ async function start() {
   gl.activeTexture(gl.TEXTURE0 + 0);
   gl.bindTexture(gl.TEXTURE_2D, jpegTexture);
   gl.uniform1i(pgCtx.getUniform("u_image"), 0);
-  //setframebuffer function
-  //gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo);
-  //gl.uniform2f(pgCtx.getUniform('u_resolution'), width, height);
-  //gl.viewport(0, 0, width, height); // viewport of the framebuffer, dont think this is needed though??
   gl.viewport(0, 0, width, height);
-  // Clear destination buffer associated texture?
-  //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+  
   {
     // draw with kernel
     // set the kernel and it's weight
@@ -196,11 +201,14 @@ async function start() {
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
     var count = 6;
+    
     gl.drawArrays(primitiveType, offset, count);
+    
     const pixels = new Float32Array(width * height);
 
     console.log(width, height);
     gl.readPixels(0, 0, width, height, gl.RED, gl.FLOAT, pixels, 0);
+    
     //const imageData = new ImageData(pixels, 240);
     /*const canvas2 = document.createElement('canvas');
     const ctx = canvas2.getContext('2d');
