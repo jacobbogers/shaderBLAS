@@ -1,0 +1,321 @@
+
+<!-- saved from url=(0058)https://www.ibiblio.org/e-notes/webgl/gpu/barkley3D2cs.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>3D Barkley's CS model</title>
+
+<script src="./3D Barkley&#39;s CS model_files/CanvasMatrix.js.download" type="text/javascript"></script>
+<script src="./3D Barkley&#39;s CS model_files/Controls.js.download" type="text/javascript"></script>
+
+<script type="text/javascript"> 
+const VSs = `#version 310 es
+  uniform mat4 mvMatrix;
+  uniform mat4 prMatrix;
+  uniform float d;
+  uniform highp sampler3D uTS;
+  uniform highp sampler3D vTS;
+  out vec2 color;
+void main(void) {
+   ivec3 pos = ivec3(gl_InstanceID & 127,
+     (gl_InstanceID>>7) & 127, gl_InstanceID>>14);
+   float t = texelFetch(uTS, pos, 0 ).r;
+   if (t < .7){  gl_Position = vec4(1000.,0.,0.,1.); return; }
+   color = vec2(t, texelFetch(vTS, pos, 0 ).r);
+   vec4 p = mvMatrix * vec4(pos, 1);
+   gl_Position = prMatrix * p;
+   gl_PointSize = -d/p.z;
+}
+`;
+ 
+const FSs = `#version 310 es
+precision highp float;
+  in vec2 color;
+  out vec4 FragColor;
+void main(void) {
+   FragColor = vec4(color, 0., 1.);
+}
+`;
+
+const CSs = `#version 310 es
+ layout (binding = 0, r32f) uniform writeonly highp image3D outImgU;
+ layout (binding = 1, r32f) uniform writeonly highp image3D outImgV;
+ layout (binding = 2, r32f) uniform readonly highp image3D inImgV;
+  uniform highp sampler3D uTS;
+ layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+  const float  a = .8, b = .001, dt = .05* .02, eps = .007, h = .2* .607,
+    dte = dt/eps, ba = b/a, dth2 = dt/(h*h);
+  const float d = 1./128.;
+void main() {
+   ivec3 p = ivec3(gl_GlobalInvocationID);
+   vec3 t = d*(vec3(p) + .5);
+   float u = texture(uTS, t).r;
+   float v = imageLoad(inImgV, p).r;
+   float vnew = v + (u - v)*dt,  uth = v/a + ba,  unew;
+   float tmp = dte*(u - uth);
+   if ( u <= uth)  unew = u/(1. - tmp*(1. - u));
+   else{
+      tmp *= u;
+      unew = (tmp + u)/(tmp + 1.);
+   }
+   unew += 
+     (texture(uTS, vec3(t.x, t.y + d, t.z)).r +
+      texture(uTS, vec3(t.x, t.y - d, t.z)).r +
+      texture(uTS, vec3(t.xy, t.z + d)).r +
+      texture(uTS, vec3(t.xy, t.z - d)).r +
+      texture(uTS, vec3(t.x + d, t.yz)).r +
+      texture(uTS, vec3(t.x - d, t.yz)).r
+      - 6.*u)*dth2;
+   imageStore(outImgU, p, vec4(unew, 0., 0., 0.));
+   imageStore(outImgV, p, vec4(vnew, 0., 0., 0.));
+}
+`;
+ 
+function createShader(gl, type, source, name){
+   var shader = gl.createShader(type);
+   gl.shaderSource(shader, source);
+   gl.compileShader(shader);
+   if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+   console.log(gl.getShaderInfoLog(shader));
+   gl.deleteShader(shader);
+}
+
+var n = 128, c_w, c_h,
+    prog, computeProgram, texU,texV, texU1,texV1, mvMat, mvMatLoc, rotMat,
+    size, frames = 0, animation = "animate", pixels,
+    delay = 0, time, ti0
+const locOutImgU = 0, locOutImgV = 1, locInImgV = 2
+function webGLStart() {
+   canvas = document.getElementById("canvas");
+   if (!window.WebGLRenderingContext){
+     alert("Your browser does not support WebGL. See http://get.webgl.org");
+     return;}
+   try { gl = canvas.getContext("webgl2-compute");
+   } catch(e) {}
+   if ( !gl ) {alert("Can't get WebGL2 compute"); return;}
+   initEvents()
+   transl = -2
+   c_w = Math.floor(window.innerWidth*.9);   c_h = window.innerHeight - 10
+   canvas.width = c_w;   canvas.height = c_h
+
+   prog  = gl.createProgram()
+   gl.attachShader(prog, createShader( gl, gl.VERTEX_SHADER, VSs))
+   gl.attachShader(prog, createShader( gl, gl.FRAGMENT_SHADER, FSs))
+   gl.linkProgram(prog)
+   gl.useProgram(prog)
+   gl.uniform1i(gl.getUniformLocation(prog, "vTS"), 1);
+
+   pixU = new Float32Array(n*n*n)
+   pixV = new Float32Array(n*n*n)
+   for(var k = 0; k < 3*n/4; k++)
+    for(var i = 0; i < 3*n/4; i++){
+      pixU[i + k*n*n + n*(n/2 + 18)] = 1
+      pixU[i + k*n*n + n*(n/2 + 19)] = 1
+      pixV[i + k*n*n + n*(n/2 + 20)] = 1
+      pixV[i + k*n*n + n*(n/2 + 21)] = 1
+      pixV[i + k*n*n + n*(n/2 + 22)] = 1
+   }
+   texV1 = gl.createTexture()
+   setTex(texV1, pixV)
+   texU1 = gl.createTexture()
+   setTex(texU1, pixU)
+   gl.activeTexture(gl.TEXTURE1)
+   texV = gl.createTexture()
+   setTex(texV, pixV)
+   gl.activeTexture(gl.TEXTURE0)
+   texU = gl.createTexture()
+   setTex(texU, pixU)
+
+   var prMatrix = new CanvasMatrix4()
+   prMatrix.perspective(45, c_w/c_h, .1, 100)
+   gl.uniformMatrix4fv( gl.getUniformLocation(prog,"prMatrix"),
+      false, new Float32Array(prMatrix.getAsArray()) )
+   gl.uniform1f(gl.getUniformLocation(prog, "d"), .01*c_h)
+   mvMatrix = new CanvasMatrix4()
+   rotMat = new CanvasMatrix4()
+   rotMat.makeIdentity()
+   rotMat.rotate(110, 0,1,0)
+   mvMatLoc = gl.getUniformLocation(prog,"mvMatrix")
+
+   computeProgram = gl.createProgram();
+   gl.attachShader(computeProgram, createShader(gl, gl.COMPUTE_SHADER, CSs));
+   gl.linkProgram(computeProgram);
+   if(!gl.getProgramParameter(computeProgram, gl.LINK_STATUS)){
+     alert(gl.getProgramInfoLog(computeProgram)); return;}
+
+   gl.enable(gl.DEPTH_TEST);
+   gl.depthFunc(gl.LEQUAL);
+   gl.clearDepth(1.0);
+   gl.clearColor(0, 0, 0, 1);
+
+   time = ti0 = new Date().getTime();
+   timer = setInterval(fr, 500);
+   anim();
+
+  function setTex(tex, pix){
+    gl.bindTexture(gl.TEXTURE_3D, tex)
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+    gl.texStorage3D(gl.TEXTURE_3D, 1, gl.R32F, n,n,n)
+    gl.texSubImage3D(gl.TEXTURE_3D, 0, 0,0,0, n,n,n,  gl.RED, gl.FLOAT, pix)
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE)
+  }
+  canvas.resize = function (){
+    c_w = Math.floor(window.innerWidth*.9);  c_h = window.innerHeight - 10
+    canvas.width = c_w;   canvas.height = c_h
+    prMatrix.makeIdentity()
+    prMatrix.perspective(45, c_w/c_h, .1, 100)
+    gl.uniformMatrix4fv( gl.getUniformLocation(prog,"prMatrix"),
+      false, new Float32Array(prMatrix.getAsArray()) )
+    gl.uniform1f(gl.getUniformLocation(prog, "d"), .01*c_h)
+    drawScene()
+  }
+}
+function draw(){
+  gl.useProgram(computeProgram);
+  gl.bindImageTexture(locOutImgU, texU1, 0, gl.TRUE, 0, gl.WRITE_ONLY, gl.R32F);
+  gl.bindImageTexture(locOutImgV, texV1, 0, gl.TRUE, 0, gl.WRITE_ONLY, gl.R32F);
+  gl.bindTexture(gl.TEXTURE_3D, texU);
+  gl.bindImageTexture(locInImgV, texV, 0, gl.TRUE, 0, gl.READ_ONLY, gl.R32F);
+  gl.dispatchCompute(32, 32, 32);
+
+  gl.bindImageTexture(locOutImgU, texU, 0, gl.TRUE, 0, gl.WRITE_ONLY, gl.R32F);
+  gl.bindImageTexture(locOutImgV, texV, 0, gl.TRUE, 0, gl.WRITE_ONLY, gl.R32F);
+  gl.bindTexture(gl.TEXTURE_3D, texU1);
+//  gl.bindImageTexture(locInImgU, texU1, 0, gl.TRUE, 0, gl.READ_ONLY, gl.R32F);
+  gl.bindImageTexture(locInImgV, texV1, 0, gl.TRUE, 0, gl.READ_ONLY, gl.R32F);
+  gl.dispatchCompute(32, 32, 32);
+  frames++
+  drawScene()
+}
+function drawScene(){
+  gl.viewport(0, 0, c_w, c_h)
+  gl.bindTexture(gl.TEXTURE_3D, texU)
+  gl.useProgram(prog)
+  rotMat.rotate(xRot/3, 1,0,0);  rotMat.rotate(yRot/3, 0,1,0)
+   rotMat.rotate(zRot, 0,0,1)
+   yRot = xRot = zRot = 0
+  mvMatrix.makeIdentity()
+  mvMatrix.scale(1/n, 1/n, 1/n)
+  mvMatrix.translate(-.5, -.5, -.5)
+  mvMatrix.multRight( rotMat )
+  mvMatrix.translate(0, 0, transl)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.uniformMatrix4fv( mvMatLoc, false,
+    new Float32Array(mvMatrix.getAsArray()) )
+  gl.drawArraysInstanced(gl.POINTS, 0, 1, n*n*n)
+}
+function anim(){
+   draw()
+   switch ( animation ){
+     case "reset":
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_3D, texV)
+      gl.texSubImage3D(gl.TEXTURE_3D, 0, 0,0,0, n,n,n,  gl.RED, gl.FLOAT, pixV)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_3D, texU)
+      gl.texSubImage3D(gl.TEXTURE_3D, 0, 0,0,0, n,n,n,  gl.RED, gl.FLOAT, pixU)
+      animation = "animate"
+     case "animate":
+       if (delay == 0) requestAnimationFrame(anim)
+       else setTimeout("requestAnimationFrame(anim)", delay)
+       break
+     case "stop":
+       break
+   }
+}
+function run(v) {
+  if( animation == "animate" ){
+    animation = "stop"
+    document.getElementById('runBtn').value = "Run "}
+  else{
+    animation = "animate"
+    document.getElementById('runBtn').value = "Stop"
+    anim()
+  }
+}
+function reset() {
+  if( animation == "stop" ){
+    animation = "reset"
+    document.getElementById('runBtn').value = "Stop"
+    anim()}
+  else animation = "reset"
+}
+function fr(){
+  var ti = new Date().getTime()
+  var fps = Math.round(1000*frames/(ti - time))
+  document.getElementById("framerate").value = fps
+  frames = 0;  time = ti
+}
+function setDelay(v) {
+  delay = parseInt(v)
+}
+</script> 
+<style type="text/css">
+  H1{ font-size: 120%; color: green}
+</style>
+</head>
+<body onload="webGLStart();" onresize="canvas.resize();" cz-shortcut-listen="true"> 
+   <canvas id="canvas" width="500" height="500"></canvas> 
+<br><button onclick="reset()">Reset</button>
+<input type="button" onclick="run()" value="Stop" size="1" id="runBtn">
+delay<input size="3" value="0" onchange="setDelay( this.value )">
+framerate:<input size="2" id="framerate">fps
+
+<br>Use your fingers or mouse to control the model
+(hold <i>shift</i> key or use mouse wheel to zoom it).
+Canvas is matched to your browser window.
+
+<br>Compute shader based 3D Barkley's model on a <i>128x128x128</i> grid
+Only highly excited nodes are shown to make vortex structure visible.
+This script may render up to 128x128x128 small sprites and is rather slow.
+<a href="https://www.ibiblio.org/e-notes/webgl/gpu/barkley3D2cs2.htm">Fast simulation</a> renders only front view yet.
+
+<ul>
+<li>3D textures are used for simulations on GPU
+</li><li>All computations on 3D grid are made in one gl.dispatchCompute(32, 32, 32) call
+</li><li>Compute shader executes 4x4x4 3D blocks and uses texture
+<a href="https://en.wikipedia.org/wiki/Z-order_curve">space filling Z-curve order</a>
+to preserve locality of the data in multiple dimensions
+</li><li>texture() fetch function uses gl.CLAMP_TO_EDGE wrap mode in CS.
+</li></ul>
+
+<h1>Barkley's model of an excitable medium</h1>
+
+<img width="250" height="250" title="tip" src="./3D Barkley&#39;s CS model_files/tip.jpg">
+<img width="300" height="240" title="uv_t" src="./3D Barkley&#39;s CS model_files/uv_t.gif">
+
+<br>Consider two-variable system of reaction - diffusion equations [1]
+<br>&nbsp; &nbsp; <i>&#8706;u/&#8706;t = (1/&#949;) u(1 - u)(u - u<sub>th </sub>)
++ &#916;u ,
+<br>&nbsp; &nbsp; &#8706;v/&#8706;t = u - v ,
+&nbsp; &nbsp; u<sub>th</sub> = (v - b)/a .</i>
+
+<br>The local dynamics (in the absence of diffusion) is illustrated in Fig.1.
+<i>u = v = 0</i> is the stable fixed point. For <i>u &gt; u<sub>th</sub></i>
+the variable <i>u</i> (the red curve) switches quickly to <i>1</i>.
+Due to the small parameter <i>&#949;</i> it is fast in comparison to
+the recovery variable <i>v</i> (the green curve) which grows exponentially.
+When <i>u<sub>th</sub> = (v + b)/a</i> exceeds <i>u</i> the excitation is
+quenched to <i>0</i> and <i>v</i> decays exponentially.
+In order to take large time steps a semi-implicit integration scheme is
+used [1,2].
+
+<p>The <i>u</i> values are displayed by the red color 
+and the <i>v</i> values by the green one.
+Diffusion propagates excitation through the plane and we get nonlinear waves.
+See <a href="https://www.ibiblio.org/e-notes/webgl/gpu/waves/barkley.html">2D Barkley's model</a>.
+
+</p><p>[1] Dwight Barkley
+<i>"A model for fast computer simulation of waves in excitable media"</i>
+Physica D 49 (1991) 61-70
+
+<br>[2] M.Dowle, R.M.Mantel and D.Barkley
+<i>"Fast simulations of waves in three-dimensional excitable media"</i>
+Int. Journal of Bifurcation and Chaos, Vol. 7, No. 11 (1997) 2529-2545
+
+</p><hr><a href="https://www.ibiblio.org/e-notes/webgl/gpu/contents.htm">Simulations on GPU</a>
+&nbsp; &nbsp; <i>updated</i> 31 Jan 2019
+
+</body></html>

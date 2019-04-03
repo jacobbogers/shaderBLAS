@@ -75,8 +75,6 @@ const fs: string = require("./fs.glsl");
 const vs: string = require("./vs.glsl");
 const pic: string = require("../assets/leaves.jpg");
 
-
-
 const log = debug("example3");
 
 async function start() {
