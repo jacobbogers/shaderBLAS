@@ -1,3 +1,71 @@
+
+// copy one buffer to another
+//gl.bindFramebuffer ( gl.DRAW_FRAMEBUFFER, copieFB );
+//gl.bindFramebuffer ( gl.READ_FRAMEBUFFER, FBorig );
+//gl.readBuffer ( gl.COLOR_ATTACHMENT0 );
+//gl.blitFramebuffer(srcX0=, srcY0=0, srcX1=PVS; srcY1=PVS, dstX0=0, dstY0=0, dstX1=PVS, dstY1=PVS, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+//looks good
+
+//old webgl1 solution
+//gl.bindFramebuffer( gl.FRAMEBUFFER , copieFB);
+//gl.viewport(0, 0, PVS, PVS);
+//gl.useProgram(copieShader);
+//gl.uniform1i(copieShader.FBorig,TEXTURE1);
+//gl.drawArrays(gl.POINTS , 0 , NBRE);
+
+//sgemm
+//sgemm (transA, transB, m,n,k, alpha, A, lda, b, ldb, beta, C, ldc)
+  
+|  transA  |  A        |
+|----------|-----------|  
+|    N     |  m x k  |    
+|    x     |  k x m  |    
+
+|  transB  |  B        |
+|----------|-----------|  
+|    N     |  k x n  |    
+|    x     |  n x k  |    
+
+|   C       |
+|----------|
+|  ldc x n |
+
+// err1: (transA=x) and (trans
+// webgl "discard" will not write a pixel
+/*
+transA=N, transB=N,
+(m x n) = alpha * (m x k) x (k x n) + beta * (m x n)  --> checked, ok,  these are nessasary diff shaders
+
+transA=x, transB=N,
+(m x n) = alpha * (k x m) x (k x n) + beta * (m x n)  --> checked, ok
+
+transA=N, transB=x, 
+(m x n) = alpha * (m x k) x (n x k) + beta * (m x n)  --> checked, ok
+
+transA=x  transB=x,
+(m x n) = alpha * (k x m) x (n x k) + beta * (m x n)  --> checked, ok
+*/
+
+// matrix A  is (LDA,ka matrix)
+// matrix B  is (LDB,kb = 'n' matrix)
+// checks are done in javascript
+
+// m < 0, n < 0, k < 0
+// lda < max
+
+// shortcut to select what (prcompiled shader you need)
+//
+
+//profile1: trA === 'n', trB ==='n' //Form  C := alpha*A*B + beta*C
+//profile2: trA === 'n', trB !== 'n' //Form C := alpha*A**T*B + beta*C
+//profile3: trB !== 'n', trB ===  'n' //Form  C := alpha*A*B**T + beta*C
+//profile4: trB !== 'n', trB !== 'n' // Form  C := alpha*A**T*B**T + beta*
+//profile1: trA === 'n' trB !== 'n'
+
+
+
+
+
 import * as debug from "debug";
 import {
   createProgramContext,
@@ -10,6 +78,8 @@ import { kernels } from "./kernels";
 const fs: string = require("./fs.glsl");
 const vs: string = require("./vs.glsl");
 const pic: string = require("../assets/leaves.jpg");
+
+
 
 const log = debug("example3");
 
