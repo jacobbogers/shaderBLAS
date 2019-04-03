@@ -59,12 +59,8 @@ transA=x  transB=x,
 //profile1: trA === 'n', trB ==='n' //Form  C := alpha*A*B + beta*C
 //profile2: trA === 'n', trB !== 'n' //Form C := alpha*A**T*B + beta*C
 //profile3: trB !== 'n', trB ===  'n' //Form  C := alpha*A*B**T + beta*C
-//profile4: trB !== 'n', trB !== 'n' // Form  C := alpha*A**T*B**T + beta*
-//profile1: trA === 'n' trB !== 'n'
-
-
-
-
+//profile4: trB !== 'n', trB !== 'n' //Form  C := alpha*A**T*B**T + beta*
+//profile1: trA === 'n' trB !== 'n' //From C := alpha
 
 import * as debug from "debug";
 import {
