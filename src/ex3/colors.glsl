@@ -3,9 +3,13 @@
 precision highp float;
 
 uniform float u_kernel[9];
-uniform sampler2D u_image; // our texture
-uniform float u_kernelWeight;
-uniform vec2 u_somedumbshit;
+uniform sampler2D A;
+uniform sampler2D B;
+uniform sampler2D Cn;
+uniform sampler2D Cn2;
+uniform int m;;
+uniform int n;
+uniform int k;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
