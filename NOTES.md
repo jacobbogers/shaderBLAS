@@ -1,5 +1,6 @@
 # webgl2 notes
 
+
 ```javascript
 var gl = canvas.getContext('webgl2')
 // get all extentions

@@ -26,7 +26,7 @@
 |    N     |  k x n  |    
 |    x     |  n x k  |    
 
-|   C       |
+|   C      |
 |----------|
 |  ldc x n |
 */
@@ -92,13 +92,13 @@ async function start() {
   const { gl } = ctx;
 
   console.log(`suppored:${ctx.supported}`);
-
+  // basicly create all programs
   [pgCtx, err] = createProgramContext(ctx, vs, fs);
   if (err) {
     console.log(err)
     return;
   }
-
+  
   const nrUnis = gl.getProgramParameter(pgCtx.program, gl.ACTIVE_UNIFORMS)
   
   console.log(`number of unis:${nrUnis}`)
@@ -124,7 +124,7 @@ async function start() {
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     return texture;
   }
-
+  
   // original texture from image
   // Create a texture and put the image in it.
   const jpegTexture = createAndSetupTexture(gl);
@@ -190,7 +190,7 @@ async function start() {
     gl.uniform1fv(pgCtx.getUniform("u_kernel[0]"), kernels.edgeDetect2.slice(1));
     const kernelWeight = kernels.edgeDetect2[0];
     gl.uniform1f(pgCtx.getUniform("u_kernelWeight"), kernelWeight);
-
+    
     // Draw the rectangle.
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
