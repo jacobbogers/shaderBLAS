@@ -161,29 +161,21 @@ async function start() {
   gl.canvas.width = width;
   gl.canvas.height = height;
   gl.viewport(0, 0, width, height);
-  gl.clearColor(1, 1, 1, 0);
+  //gl.clearColor(-1, -1, -1, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // Tell it to use our program (pair of shaders)
   gl.useProgram(pgCtx.program);
 
   gl.activeTexture(gl.TEXTURE0 + 0);
-  gl.bindTexture(gl.TEXTURE_2D, jpegTexture);
-  gl.uniform1i(pgCtx.getUniform("u_image"), 0);
   gl.viewport(0, 0, width, height);
   
   {
-    // draw with kernel
-    // set the kernel and it's weight
-    gl.uniform1fv(pgCtx.getUniform("u_kernel[0]"), kernels.edgeDetect2.slice(1));
-    const kernelWeight = kernels.edgeDetect2[0];
-    gl.uniform1f(pgCtx.getUniform("u_kernelWeight"), kernelWeight);
-
+    
     // Draw the rectangle.
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
     var count = 6;
-    
     gl.drawArrays(primitiveType, offset, count);
     
     const pixels = new Float32Array(width * height);
@@ -191,25 +183,9 @@ async function start() {
     console.log(width, height);
     gl.readPixels(0, 0, width, height, gl.RED, gl.FLOAT, pixels, 0);
     
-    //const imageData = new ImageData(pixels, 240);
-    /*const canvas2 = document.createElement('canvas');
-    const ctx = canvas2.getContext('2d');
-    canvas2.width=240;
-    canvas2.height=180;
-    const imgData = ctx.getImageData(0,0,240,180);
-    for (let y=0; y< 180;y++){
-      for (let x=0; x < 240; x++){
-         const coord = (y*240+x)*4;
-         imgData.data[coord] = pixels[coord];
-         imgData.data[coord+1] = pixels[coord+1];
-         imgData.data[coord+2] = pixels[coord+2];     
-         imgData.data[coord+3] = pixels[coord+3];
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-    document.body.appendChild(canvas2);*/
+    
     console.log(pixels);
-    //150,195,202
+    
   }
 }
 
