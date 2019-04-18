@@ -15,7 +15,7 @@
 
 //sgemm
 //sgemm (transA, transB, m,n,k, alpha, A, lda, b, ldb, beta, C, ldc)
-  
+/*  
 |  transA  |  A        |
 |----------|-----------|  
 |    N     |  m x k  |    
@@ -29,7 +29,7 @@
 |   C       |
 |----------|
 |  ldc x n |
-
+*/
 // err1: (transA=x) and (trans
 // webgl "discard" will not write a pixel
 /*
