@@ -123,15 +123,7 @@ async function start() {
 
   // original texture from image
   // Create a texture and put the image in it.
-  const jpegTexture = createAndSetupTexture(gl);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0 /* mipLevel*/,
-    gl.RGBA /*internalFormat*/,
-    gl.RGBA /*srcFormat*/,
-    gl.UNSIGNED_BYTE /* srcType */,
-    jpeg
-  );
+ 
 
   const outputText = createAndSetupTexture(gl);
   // make the texture the same size as the image

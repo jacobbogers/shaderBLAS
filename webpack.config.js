@@ -21,7 +21,7 @@ module.exports = env => {
     entry: {
       //ex1: resolve('./src/ex1/index.ts'),
       //ex2: resolve('./src/ex2/index.ts'),
-      ex3: resolve('./src/ex3/index.ts'),
+      ex4: resolve('./src/ex4/index.ts'),
     },
    output: {
     filename: `[name]/${random}-[hash]-bundle.js`,
