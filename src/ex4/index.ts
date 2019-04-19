@@ -162,7 +162,7 @@ async function start() {
   gl.canvas.height = height;
   gl.viewport(0, 0, width, height);
   //gl.clearColor(-1, -1, -1, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+ // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // Tell it to use our program (pair of shaders)
   gl.useProgram(pgCtx.program);
