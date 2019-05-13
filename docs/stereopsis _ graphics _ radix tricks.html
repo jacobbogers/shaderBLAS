@@ -1,0 +1,363 @@
+
+<!-- saved from url=(0032)http://stereopsis.com/radix.html -->
+<html><script>(function(){var PluginArray=function(plugins){var last=plugins.length;for(var i=0;i<last;i++){this[i]=this[plugins[i].name]=plugins[i];}var Plugin=function(prop){for(var i in prop){this[i]=prop[i];}};Plugin.prototype.item=function(){};Plugin.prototype.namedItem=function(){};var dummy=new Plugin({description:"DjVu Viewer Extension for Google Chrome",filename:"djvu.js",name:"DjVu Viewer Extension",version:"",});this[last]=this[dummy.name]=dummy;Object.defineProperty(this,"length",{get:function(){return last+1}});};PluginArray.prototype.item=function(index){return this[index];};PluginArray.prototype.namedItem=function(name){for(var i=0;i<this.length;i++){if(this[i].name===name){return this[i];}}};PluginArray.prototype.refresh=function(){};var plugins=new PluginArray(navigator.plugins);Object.defineProperty(navigator,"plugins",{get:function(){return plugins}});})()</script><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft Developer Studio">
+
+<title>stereopsis : graphics : radix tricks</title>
+<link rel="stylesheet" type="text/css" href="./stereopsis _ graphics _ radix tricks_files/style.css">
+<!--<link href='//fonts.googleapis.com/css?family=Raleway:300,400,600,800' rel='stylesheet' type='text/css'>-->
+<script src="./stereopsis _ graphics _ radix tricks_files/urchin.js.download" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-54749-1";
+urchinTracker();
+</script>
+
+</head>
+<body cz-shortcut-listen="true">
+
+<h3>Radix Tricks</h3>
+<i>Michael Herf<br>
+December 2001</i><p>
+
+</p><div style="width:600px">
+
+I ran across <a target="_coder" href="http://codercorner.com/RadixSortRevisited.htm">Pierre Terdiman's article</a> on
+Radix Sort for floating point numbers, and I became interested in seeing how far I could push the performance.<p>
+
+I figured out what I think are a few unusual optimizations, and while I'm not really sure that any of them are
+new, the combination makes my code run pretty fast.</p><p>
+
+</p><h3>Multiple Histogramming</h3>
+First, I use histogramming to make the radix work fast -- this is very standard stuff.  The standard approach is 
+to take all the bits in a certain radix and build the histogram for them, then summing across the histogram to determine where to copy each 
+element, and then making a final pass to copy all the bits in-order.  This is two read-passes per radix, but we can certainly do better.<p>
+
+In particular, histograms don't change when you change the order, so I just do all the histogramming in one pass through the data.
+One read builds several histograms.</p><p>
+
+So if you histogram a floating point number in four 8-bit passes, you can build four histograms from one pass through the data, rather than four.</p><p>
+
+This would mean 5 passes through the data, rather than the usual 8.</p><p>
+
+</p><h3>Floating point support</h3>
+Pierre (above) has a nice approach to floating point sorting, a good way to find the sign bit and switch the order of the values.
+But I wanted to do it directly, without a need for a final pass.<p>
+
+If you look at them in binary, single precision floating point numbers have two problems that keeps them from being directly sortable.</p><p>
+
+[sign] [exponent] [mantissa]<br>
+
+First, the sign bit is set when the value is negative, which means that all negative numbers are <b>bigger</b> than positive ones.  You could 
+just flip it, of course (I thought this was all I had to do at first), but there's still another problem.</p><p>
+
+But the second problem is that the values are signed-magnitude, so "more negative" floating point numbers actually look bigger to a normal 
+bitwise comparison.</p><p>
+
+To fix this, we have to do some bit-twiddling in integer.  It turns out that flipping the exponent inverts the order of the exponents (flips them low to
+high), and flipping the mantissa does the same.  Basically, the exponent is a "range" of numbers, and we flip the orders of these ranges.  And then the
+mantissa is the numbers in each range, and we flip these as well.</p><p>
+
+We're supposed to call this a "bijective mapping" from 32-bit integers to themselves, which means, for every 32-bit
+number, there's another unique one that we map to, and we can invert the mapping to get back exactly where we started.</p><p>
+
+It turns out that when you say "flip" you can also say, "xor with 1's" -- for instance, if you had an 8-bit number "x", to compute "255-x" you could
+simply use (255 ^ x) instead -- without any of the evils of carrying like addition has.  (In case it wasn't clear, 255 is eight "1s" in a row.)</p><p>
+
+So, to fix our floating point numbers, we define the following rules:</p><p>
+
+</p><ol>
+<li>Always flip the sign bit.<br>
+</li><li>If the sign bit was set, flip the other bits too.<p>
+</p></li></ol>
+
+To get back, we flip the sign bit always, and if the sign bit was <b>not</b> set, we flip the other bits too.<p>
+
+If we write this as a single xor, what we want is:<br>
+</p><blockquote>
+When the sign bit is set, xor with 0xFFFFFFFF (flip every bit)<br>
+When the sign bit is unset, xor with 0x80000000 (flip the sign bit)<br>
+</blockquote>
+
+This leads to two routines to convert floating point values to sortable numbers and back again.  I call them FloatFlip and IFloatFlip:
+<pre>static inline uint32 FloatFlip(uint32 f)
+{
+	uint32 mask = -int32(f &gt;&gt; 31) | 0x80000000;
+	return f ^ mask;
+}
+
+static inline uint32 IFloatFlip(uint32 f)
+{
+	uint32 mask = ((f &gt;&gt; 31) - 1) | 0x80000000;
+	return f ^ mask;
+}
+</pre>
+
+This shifts the sign bit down 31 places (to make the entire number "0" or "1"), and then either inverts it or subtracts one.  
+In particular, this always makes "0" or "0xFFFFFFFF" which becomes "0x80000000" or "0xFFFFFFFF" after or'ing in a 1.<p>
+
+Works nicely.</p><p>
+
+</p><h3>Wide radix</h3>
+The third optimization notices that 11-bit histograms fit in L1, so we use 3 11-bit histograms, rather than the more standard 4 8-bit ones.<p>
+An initial implementation used 8-bit histograms, and this 11-bit optimization improves performance by about 40%.</p><p>
+
+</p><h3>Prefetch</h3>
+The final optimization uses prefetch instructions (from the SSE instruction set) to optimize read access to memory.  This gives an additional 
+25% speedup.<p>
+
+</p><h3>Putting it together</h3>
+
+If done well, this code should be memory-bound.  In this case, I think I fall a little bit short, though the fact that prefetch gave such a 
+reasonable speedup means that I'm close to memory bandwidth.<p>
+
+My test case was:
+</p><ul>
+<li>65536 floating-point numbers,
+</li><li>randomly valued,
+</li><li>sorted to an external array,
+</li><li>testing on my P3/600.<p>
+</p></li></ul>
+
+My mergesort (from my class library) achieves about 12 sorts/sec on this test, approximately equivalent to the std::sort routine in Microsoft's 
+implementation of the STL, distributed with Visual C++ (a quicksort, I believe.)  Both of these implementations are considered incredibly well optimized.<p>
+
+After all the above optimizations, the radix achieves 97 sorts/sec on this test, a quite amazing improvement.</p><p>
+
+I hope the code is quite readable, so I'm just posting it here for everybody to try.  You'd have to do some modifications to make it useful, 
+but this is nice as a raw speed test.</p><p>
+
+</p><pre>// Radix.cpp: a fast floating-point radix sort demo
+//
+//   Copyright (C) Herf Consulting LLC 2001.  All Rights Reserved.
+//   Use for anything you want, just tell me what you do with it.
+//   Code provided "as-is" with no liabilities for anything that goes wrong.
+//
+
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;windows.h&gt;	// QueryPerformanceCounter
+
+// ------------------------------------------------------------------------------------------------
+// ---- Basic types
+
+typedef long int32;
+typedef unsigned long uint32;
+typedef float real32;
+typedef double real64;
+typedef unsigned char uint8;
+typedef const char *cpointer;
+
+// ------------------------------------------------------------------------------------------------
+// Configuration/Testing
+
+// ---- number of elements to test (shows tradeoff of histogram size vs. sort size)
+const uint32 ct = 65536;
+
+// ---- really, a correctness check, not correctness itself ;)
+#define CORRECTNESS	1
+
+// ---- use SSE prefetch (needs compiler support), not really a problem on non-SSE machines.
+//		need http://msdn.microsoft.com/vstudio/downloads/ppack/default.asp
+//		or recent VC to use this
+
+#define PREFETCH 1
+
+#if PREFETCH
+#include &lt;xmmintrin.h&gt;	// for prefetch
+#define pfval	64
+#define pfval2	128
+#define pf(x)	_mm_prefetch(cpointer(x + i + pfval), 0)
+#define pf2(x)	_mm_prefetch(cpointer(x + i + pfval2), 0)
+#else
+#define pf(x)
+#define pf2(x)
+#endif
+
+// ------------------------------------------------------------------------------------------------
+// ---- Visual C++ eccentricities
+
+#if _WINDOWS
+#define finline __forceinline
+#else
+#define finline inline
+#endif
+
+// ================================================================================================
+// flip a float for sorting
+//  finds SIGN of fp number.
+//  if it's 1 (negative float), it flips all bits
+//  if it's 0 (positive float), it flips the sign only
+// ================================================================================================
+finline uint32 FloatFlip(uint32 f)
+{
+	uint32 mask = -int32(f &gt;&gt; 31) | 0x80000000;
+	return f ^ mask;
+}
+
+finline void FloatFlipX(uint32 &amp;f)
+{
+	uint32 mask = -int32(f &gt;&gt; 31) | 0x80000000;
+	f ^= mask;
+}
+
+// ================================================================================================
+// flip a float back (invert FloatFlip)
+//  signed was flipped from above, so:
+//  if sign is 1 (negative), it flips the sign bit back
+//  if sign is 0 (positive), it flips all bits back
+// ================================================================================================
+finline uint32 IFloatFlip(uint32 f)
+{
+	uint32 mask = ((f &gt;&gt; 31) - 1) | 0x80000000;
+	return f ^ mask;
+}
+
+// ---- utils for accessing 11-bit quantities
+#define _0(x)	(x &amp; 0x7FF)
+#define _1(x)	(x &gt;&gt; 11 &amp; 0x7FF)
+#define _2(x)	(x &gt;&gt; 22 )
+
+// ================================================================================================
+// Main radix sort
+// ================================================================================================
+static void RadixSort11(real32 *farray, real32 *sorted, uint32 elements)
+{
+	uint32 i;
+	uint32 *sort = (uint32*)sorted;
+	uint32 *array = (uint32*)farray;
+
+	// 3 histograms on the stack:
+	const uint32 kHist = 2048;
+	uint32 b0[kHist * 3];
+
+	uint32 *b1 = b0 + kHist;
+	uint32 *b2 = b1 + kHist;
+
+	for (i = 0; i &lt; kHist * 3; i++) {
+		b0[i] = 0;
+	}
+	//memset(b0, 0, kHist * 12);
+
+	// 1.  parallel histogramming pass
+	//
+	for (i = 0; i &lt; elements; i++) {
+		
+		pf(array);
+
+		uint32 fi = FloatFlip((uint32&amp;)array[i]);
+
+		b0[_0(fi)] ++;
+		b1[_1(fi)] ++;
+		b2[_2(fi)] ++;
+	}
+	
+	// 2.  Sum the histograms -- each histogram entry records the number of values preceding itself.
+	{
+		uint32 sum0 = 0, sum1 = 0, sum2 = 0;
+		uint32 tsum;
+		for (i = 0; i &lt; kHist; i++) {
+
+			tsum = b0[i] + sum0;
+			b0[i] = sum0 - 1;
+			sum0 = tsum;
+
+			tsum = b1[i] + sum1;
+			b1[i] = sum1 - 1;
+			sum1 = tsum;
+
+			tsum = b2[i] + sum2;
+			b2[i] = sum2 - 1;
+			sum2 = tsum;
+		}
+	}
+
+	// byte 0: floatflip entire value, read/write histogram, write out flipped
+	for (i = 0; i &lt; elements; i++) {
+
+		uint32 fi = array[i];
+		FloatFlipX(fi);
+		uint32 pos = _0(fi);
+		
+		pf2(array);
+		sort[++b0[pos]] = fi;
+	}
+
+	// byte 1: read/write histogram, copy
+	//   sorted -&gt; array
+	for (i = 0; i &lt; elements; i++) {
+		uint32 si = sort[i];
+		uint32 pos = _1(si);
+		pf2(sort);
+		array[++b1[pos]] = si;
+	}
+
+	// byte 2: read/write histogram, copy &amp; flip out
+	//   array -&gt; sorted
+	for (i = 0; i &lt; elements; i++) {
+		uint32 ai = array[i];
+		uint32 pos = _2(ai);
+
+		pf2(array);
+		sort[++b2[pos]] = IFloatFlip(ai);
+	}
+
+	// to write original:
+	// memcpy(array, sorted, elements * 4);
+}
+
+// Simple test of radix
+int main(int argc, char* argv[])
+{
+	uint32 i;
+
+	const uint32 trials = 100;
+	
+	real32 *a = new real32[ct];
+	real32 *b = new real32[ct];
+
+	for (i = 0; i &lt; ct; i++) {
+		a[i] = real32(rand()) / 2048;
+		if (rand() &amp; 1) {
+			a[i] = -a[i];
+		}
+	}
+
+	LARGE_INTEGER s1, s2, f;
+	QueryPerformanceFrequency(&amp;f);
+	QueryPerformanceCounter(&amp;s1);
+
+
+	for (i = 0; i &lt; trials; i++) {
+		RadixSort11(a, b, ct);
+	}
+
+	QueryPerformanceCounter(&amp;s2);
+	real64 hz = real64(f.QuadPart) / (s2.QuadPart - s1.QuadPart);
+	printf("%d elements: %f/s\n", ct, hz * trials);
+
+#if CORRECTNESS
+	for (i = 1; i &lt; ct; i++) {
+		if (b[i - 1] &gt;  b[i]) {
+			printf("Wrong at %d\n", i);
+		}
+
+	}
+#endif
+
+	delete a;
+	delete b;
+	
+	return 0;
+}
+</pre>
+
+And for trying this at home, a zipfile for you: 
+<a href="http://stereopsis.com/radix.zip">radix.zip</a><br><br>
+
+</div>
+
+
+
+<div id="shadowMeasureIt"></div><div id="divCoordMeasureIt"></div><div id="divRectangleMeasureIt"><div id="divRectangleBGMeasureIt"></div></div></body></html>

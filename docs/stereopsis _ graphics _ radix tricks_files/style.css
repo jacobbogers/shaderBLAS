@@ -1,0 +1,6 @@
+body	{ background-repeat: no-repeat; background-attachment: scroll; background-image: url(http://www.stereopsis.com/bg.gif); 
+		  background-color: #FFFFFF; margin-left: 80; margin-top: 100; font-family : Helvetica, Calibri, Arial, sans-serif; font-size : 14px; line-height: 120%;}
+P		{ background: white;}
+H1		{ color: #333; font-size: 2.5em; font-weight:700; }
+A:hover	{ background-color: #F0EFE3; color: #804C4C}
+H2,H3	{ font-size:1.5em; color:#667; font-weight: 700; margin:1em 0 0.2em 0; letter-spacing:-0.03em;}
