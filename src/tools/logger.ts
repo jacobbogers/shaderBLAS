@@ -89,9 +89,9 @@ function addLoggers(obj: Logger) {
             enumeration: false,
             configurable: false
         },
-        error: {
+        errors: {
             value: (text: string[]) => {
-                return addTostore('error', text); // promise
+                return addTostore('errors', text); // promise
             },
             enumeration: false,
             configurable: false
@@ -124,6 +124,7 @@ export class Logger extends EventTarget {
     
     public limit: number;
     public db: IDBDatabase;
+
 
     constructor() {
         super();
