@@ -1,6 +1,9 @@
+import { drawBufferInfo } from "twgl.js";
+
 export interface LogEntryError {
     module: string;
     section: string;
+    time: Date;
     text: string;
 };
 
@@ -13,13 +16,114 @@ export interface LogQueryRow {
 }
 
 
+function addLoggers(obj: Logger) {
+    const modules: string[] = [];
+    const sections: string[] = [];
+
+    /*function minMaxIdStore(msgtype: string){
+        const transaction = obj.db.transaction([`logs-${msgtype}`], "readwrite");
+        return new Promise(resolve => {
+            let count = 0;
+            transaction.oncomplete = () => {
+                resolve([true, null]);
+            }
+            transaction.onerror = err => {
+                resolve([null, err]);
+            }
+            const objectStore = transaction.objectStore(`logs-${msgtype}`);
+            const request = objectStore.
+            request.onsuccess = e => {
+                count = request.result;
+                if (count > obj.limit * 2){
+                    objectStore.delete()
+                }
+            }
+        });
+    }*/
+
+    function addTostore(msgtype: string, text: string[]) {
+        const transaction = obj.db.transaction([`logs-${msgtype}`], "readwrite");
+        const time = new Date();
+        const lastModule = modules[modules.length - 1] || '';
+        const lastSection = sections[sections.length - 1] || '';
+        let path: string = '';
+        if (lastModule) {
+            if (lastSection) {
+                path = `${lastModule}/${lastSection}`;
+            }
+            else {
+                path = `${lastModule}/`;
+            }
+        }
+        return new Promise(resolve => {
+            transaction.oncomplete = () => {
+                resolve([true, null]);
+            }
+            transaction.onerror = err => {
+                resolve([null, err]);
+            }
+            const objectStore = transaction.objectStore(`logs-${msgtype}`);
+            for (let i = 0; i < text.length; i++) {
+                const objectStoreRequest = objectStore.add({
+                    module: lastModule,
+                    section: lastSection,
+                    time,
+                    text: text[i]
+                });
+            }
+        });
+    }
+
+    Object.defineProperties(obj, {
+        setModule: {
+            value: (module: string) => {
+                modules.push(module);
+            },
+            enumeration: false,
+            configurable: false
+        },
+        setSection: {
+            value: (section: string) => {
+                sections.push(section);
+            },
+            enumeration: false,
+            configurable: false
+        },
+        error: {
+            value: (text: string[]) => {
+                return addTostore('error', text); // promise
+            },
+            enumeration: false,
+            configurable: false
+        },
+        popSection: {
+            enumeration: false,
+            configurable: false,
+            value: () => {
+                sections.pop();
+            },
+
+        },
+        popModule: {
+            enumeration: false,
+            configurable: false,
+            value: () => {
+                modules.pop();
+            },
+        }
+    });
+}
+
+
 export class Logger extends EventTarget {
     private name: string;
     private version: number;
     private ops: string[];
     private error: Error;
     private currentEvent: Event;
-    private db: IDBDatabase;
+    
+    public limit: number;
+    public db: IDBDatabase;
 
     constructor() {
         super();
@@ -32,7 +136,8 @@ export class Logger extends EventTarget {
         return this.ops[this.ops.length - 1];
     }
 
-    open() {
+    open(limit: number = 300) {
+        this.limit = 300;
         let req: IDBOpenDBRequest;
         let id: number; // timeout id
         const event = `${Math.random()}`; // internal event random to prevent collision
@@ -55,11 +160,11 @@ export class Logger extends EventTarget {
             const { oldVersion, newVersion } = e;
             const db = this.db = req.result;
             if (oldVersion === 0) { // first Time
-                const errorStore = db.createObjectStore('logs-errors', { autoIncrement: true });
+                const errorStore = db.createObjectStore('logs-error', { autoIncrement: true });
                 errorStore.createIndex('time', 'time');
                 const traceStore = db.createObjectStore('logs-trace', { autoIncrement: true });
                 traceStore.createIndex('time', 'time');
-                const warningStore = db.createObjectStore('logs-warning', { autoIncrement: true });
+                const warningStore = db.createObjectStore('logs-warn', { autoIncrement: true });
                 warningStore.createIndex('time', 'time');
                 const debugStore = db.createObjectStore('logs-debug', { autoIncrement: true });
                 debugStore.createIndex('time', 'time');
@@ -79,6 +184,7 @@ export class Logger extends EventTarget {
             this.currentEvent = e;
             this.ops.push('success');
             this.db = req.result;
+            addLoggers(this);
             this.dispatchEvent(new Event(event));
         }
         req.onerror = e => {
@@ -95,7 +201,7 @@ export class Logger extends EventTarget {
             }
             if (this._lastOps() === 'blocked') {
                 id = setTimeout(() => {
-                    resolve([null, 'timeout waiting in blocked']);
+                    resolve([null, 'timeout of 5sec waiting in blocked']);
                 }, 5000);
             }
             if (this._lastOps() === 'error') {
@@ -112,7 +218,7 @@ export class Logger extends EventTarget {
 
         return new Promise(resolve => {
             listener = createListener(resolve);
-            this.addEventListener(event, listener); 
+            this.addEventListener(event, listener);
         });
     }
 }
