@@ -7,6 +7,7 @@
     "@material-ui/styles": "^3.0.0-alpha.10",
     "@material-ui/system": "^3.0.0-alpha.2",
     "debug": "^4.1.1",
+    "roboto-fontface": "^0.10.0",
     "twgl.js": "^4.7.0"
   },
   "description": "",
