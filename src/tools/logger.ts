@@ -20,26 +20,16 @@ function addLoggers(obj: Logger) {
     const modules: string[] = [];
     const sections: string[] = [];
 
-    /*function minMaxIdStore(msgtype: string){
-        const transaction = obj.db.transaction([`logs-${msgtype}`], "readwrite");
-        return new Promise(resolve => {
-            let count = 0;
-            transaction.oncomplete = () => {
-                resolve([true, null]);
-            }
-            transaction.onerror = err => {
-                resolve([null, err]);
-            }
-            const objectStore = transaction.objectStore(`logs-${msgtype}`);
-            const request = objectStore.
-            request.onsuccess = e => {
-                count = request.result;
-                if (count > obj.limit * 2){
-                    objectStore.delete()
-                }
-            }
-        });
-    }*/
+    function truncateObjectStore(high: number, low: number, objStore: IDBObjectStore){
+        if (high-low+1 <= obj.limitHigh){
+            return;
+        }
+        // how much to clean?
+        // anything lower and equal to (high - obj.limitLow)
+        // so upper = high-obj.limitLow, and lower = plainly low
+        const keyRangeValue = IDBKeyRange.upperBound( high-obj.limitLow);
+        objStore.delete(keyRangeValue);
+    }
 
     function addTostore(msgtype: string, text: string[]) {
         const transaction = obj.db.transaction([`logs-${msgtype}`], "readwrite");
@@ -62,14 +52,30 @@ function addLoggers(obj: Logger) {
             transaction.onerror = err => {
                 resolve([null, err]);
             }
+            let objectStoreRequest: IDBRequest<IDBValidKey>;
             const objectStore = transaction.objectStore(`logs-${msgtype}`);
             for (let i = 0; i < text.length; i++) {
-                const objectStoreRequest = objectStore.add({
+                objectStoreRequest = objectStore.add({
                     module: lastModule,
                     section: lastSection,
                     time,
                     text: text[i]
                 });
+            }
+            let cursorRequest: IDBRequest<IDBCursorWithValue>;
+            objectStoreRequest.onsuccess = () => {
+                const cursorRequest = objectStore.openCursor(undefined, "prev");
+                cursorRequest.onsuccess = () => {
+                    const cursor = cursorRequest.result;
+                    const high = Number(cursor.primaryKey);
+                    const cursorRequest2 = objectStore.openCursor(undefined, "next");
+                    cursorRequest2.onsuccess = () => {
+                        const cursor = cursorRequest2.result;
+                        const low = Number(cursor.primaryKey);
+                        console.log(`number of records:${high - low + 1}`)
+                        truncateObjectStore(high, low, objectStore);
+                    }
+                }
             }
         });
     }
@@ -121,8 +127,9 @@ export class Logger extends EventTarget {
     private ops: string[];
     private error: Error;
     private currentEvent: Event;
-    
-    public limit: number;
+
+    public limitLow: number;
+    public limitHigh: number;
     public db: IDBDatabase;
 
 
@@ -137,8 +144,9 @@ export class Logger extends EventTarget {
         return this.ops[this.ops.length - 1];
     }
 
-    open(limit: number = 300) {
-        this.limit = 300;
+    open(limitLow: number = 300, limitHigh = limitLow * 1.5) {
+        this.limitLow = limitLow;
+        this.limitHigh = Math.trunc(limitHigh);
         let req: IDBOpenDBRequest;
         let id: number; // timeout id
         const event = `${Math.random()}`; // internal event random to prevent collision
